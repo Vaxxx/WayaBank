@@ -44,8 +44,9 @@ public class RepaymentPeriod {
 
     @JsonExclude
     private final RepaymentPeriod previous;
+    @Setter
     @Getter
-    private final LocalDate fromDate;
+    private LocalDate fromDate;
     @Setter
     @Getter
     private LocalDate dueDate;
@@ -86,21 +87,24 @@ public class RepaymentPeriod {
     @Getter
     private final ILoanConfigurationDetails loanProductRelatedDetail;
     @JsonExclude
+    @Setter
     private MonetaryCurrency currency;
 
     @Getter
     @Setter
-    private boolean isOutstandingMovedDueToReAging = false;
-
+    private Money creditedPrincipalMovedDueReAge;
+    @Getter
+    @Setter
+    private Money creditedInterestMovedDueReAge;
     @Setter
     @Getter
     private boolean noUnrecognisedInterest;
     @Setter
     @Getter
-    private boolean reAged = false;
+    private boolean reAged;
     @Setter
     @Getter
-    private boolean reAgedEarlyRepaymentHolder = false;
+    private boolean reAgedEarlyRepaymentHolder;
     @Getter
     @Setter
     private Money reAgedInterest;
@@ -124,6 +128,8 @@ public class RepaymentPeriod {
         this.reAged = reAged;
         this.reAgedEarlyRepaymentHolder = reAgedEarlyRepaymentHolder;
         this.reAgedInterest = reAgedInterest;
+        this.creditedInterestMovedDueReAge = Money.zero(loanProductRelatedDetail.getCurrencyData(), mc);
+        this.creditedInterestMovedDueReAge = Money.zero(loanProductRelatedDetail.getCurrencyData(), mc);
     }
 
     public static RepaymentPeriod empty(RepaymentPeriod previous, MathContext mc, ILoanConfigurationDetails loanProductRelatedDetail) {
@@ -147,7 +153,12 @@ public class RepaymentPeriod {
                 repaymentPeriod.getPaidPrincipal(), repaymentPeriod.getPaidInterest(), repaymentPeriod.getFutureUnrecognizedInterest(), mc,
                 repaymentPeriod.getLoanProductRelatedDetail(), repaymentPeriod.isNoUnrecognisedInterest(), repaymentPeriod.isReAged(),
                 repaymentPeriod.isReAgedEarlyRepaymentHolder(), repaymentPeriod.getReAgedInterest());
-        newRepaymentPeriod.setOutstandingMovedDueToReAging(repaymentPeriod.isOutstandingMovedDueToReAging());
+        newRepaymentPeriod.setCreditedPrincipalMovedDueReAge(repaymentPeriod.getCreditedPrincipalMovedDueReAge());
+        newRepaymentPeriod.setCreditedInterestMovedDueReAge(repaymentPeriod.getCreditedInterestMovedDueReAge());
+        newRepaymentPeriod.setTotalDisbursedAmount(repaymentPeriod.getTotalDisbursedAmount());
+        newRepaymentPeriod.setTotalCapitalizedIncomeAmount(repaymentPeriod.getTotalCapitalizedIncomeAmount());
+        newRepaymentPeriod.setInterestMoved(repaymentPeriod.isInterestMoved());
+        newRepaymentPeriod.setCurrency(repaymentPeriod.getCurrency());
         // There is always at least 1 interest period, by default with same from-due date as repayment period
         for (InterestPeriod interestPeriod : repaymentPeriod.getInterestPeriods()) {
             newRepaymentPeriod.getInterestPeriods().add(InterestPeriod.copy(newRepaymentPeriod, interestPeriod, mc));
@@ -161,7 +172,12 @@ public class RepaymentPeriod {
                 repaymentPeriod.getDueDate(), new ArrayList<>(), repaymentPeriod.getEmi(), repaymentPeriod.getOriginalEmi(), zero, zero,
                 zero, mc, repaymentPeriod.getLoanProductRelatedDetail(), repaymentPeriod.isNoUnrecognisedInterest(),
                 repaymentPeriod.isReAged(), repaymentPeriod.isReAgedEarlyRepaymentHolder(), repaymentPeriod.getReAgedInterest());
-        newRepaymentPeriod.setOutstandingMovedDueToReAging(repaymentPeriod.isOutstandingMovedDueToReAging());
+        newRepaymentPeriod.setCreditedPrincipalMovedDueReAge(repaymentPeriod.getCreditedPrincipalMovedDueReAge());
+        newRepaymentPeriod.setCreditedInterestMovedDueReAge(repaymentPeriod.getCreditedInterestMovedDueReAge());
+        newRepaymentPeriod.setTotalDisbursedAmount(repaymentPeriod.getTotalDisbursedAmount());
+        newRepaymentPeriod.setTotalCapitalizedIncomeAmount(repaymentPeriod.getTotalCapitalizedIncomeAmount());
+        newRepaymentPeriod.setInterestMoved(repaymentPeriod.isInterestMoved());
+        newRepaymentPeriod.setCurrency(repaymentPeriod.getCurrency());
         // There is always at least 1 interest period, by default with same from-due date as repayment period
         for (InterestPeriod interestPeriod : repaymentPeriod.getInterestPeriods()) {
             var interestPeriodCopy = InterestPeriod.copy(newRepaymentPeriod, interestPeriod);
@@ -310,8 +326,8 @@ public class RepaymentPeriod {
      * @return
      */
     public Money getTotalCreditedAmount() {
-        return isOutstandingMovedDueToReAging ? Money.zero(getCurrency(), getMc())
-                : getCreditedPrincipal().plus(getCreditedInterest(), getMc());
+        return getCreditedPrincipal().plus(getCreditedInterest(), getMc()).minus(getCreditedInterestMovedDueReAge(), getMc())
+                .minus(getCreditedPrincipalMovedDueReAge(), getMc());
     }
 
     /**
@@ -479,5 +495,10 @@ public class RepaymentPeriod {
 
     public Money getTotalCapitalizedIncomeAmount() {
         return MathUtil.nullToZero(totalCapitalizedIncomeAmount, getCurrency(), getMc());
+    }
+
+    public void moveOutstandingDueToReAging() {
+        setCreditedPrincipalMovedDueReAge(getCreditedPrincipal());
+        setCreditedInterestMovedDueReAge(getCreditedInterest());
     }
 }

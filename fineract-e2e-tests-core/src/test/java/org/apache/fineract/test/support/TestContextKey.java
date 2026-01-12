@@ -52,6 +52,7 @@ public abstract class TestContextKey {
     public static final String LOAN_REAGING_UNDO_RESPONSE = "loanReAgingUndoResponse";
     public static final String LOAN_REAGING_PREVIEW_RESPONSE = "loanReAgingPreviewResponse";
     public static final String LOAN_REAMORTIZATION_RESPONSE = "loanReAmortizationResponse";
+    public static final String LOAN_REAMORTIZATION_PREVIEW_RESPONSE = "loanReAmortizationPreviewResponse";
     public static final String LOAN_REAMORTIZATION_UNDO_RESPONSE = "loanReAmortizationUndoResponse";
     public static final String BUSINESS_DATE_RESPONSE = "businessDateResponse";
     public static final String DEFAULT_LOAN_PRODUCT_CREATE_RESPONSE_LP1 = "loanProductCreateResponseLP1";
@@ -290,4 +291,6 @@ public abstract class TestContextKey {
     public static final String LP1_INTEREST_FLAT_DAILY_RECALCULATION_SAR_MULTIDISB_EXPECT_TRANCHES = "loanProductCreateResponseLP1InterestFlatDailyRecalculationSameAsRepaymentMultiDisbursementExpectTranches";
     public static final String LP1_INTEREST_FLAT_DAILY_ACTUAL_ACTUAL_MULTIDISB_EXPECT_TRANCHES = "loanProductCreateResponseLP1InterestFlatDailyActualActualMultiDisbursementExpectTranches";
     public static final String DEFAULT_LOAN_PRODUCT_CREATE_RESPONSE_LP2_ADV_PYMNT_360_30_ZERO_INTEREST_CHARGE_OFF_ACCRUAL_ACTIVITY = "loanProductCreateResponseLP2AdvancedPaymentZeroInterestChargeOffBehaviourAccrualActivity";
+    public static final String DEFAULT_LOAN_PRODUCT_CREATE_RESPONSE_LP2_ADVANCED_CUSTOM_PAYMENT_ALLOCATION_PROGRESSIVE_LOAN_SCHEDULE_PRINCIPAL_FIRST = "loanProductCreateResponseLP2AdvancedPaymentHorizontalPrincipalFirst";
+    public static final String DEFAULT_LOAN_PRODUCT_CREATE_RESPONSE_LP2_ADV_CUSTOM_PMT_ALLOC_PROGRESSIVE_LOAN_SCHEDULE_HORIZONTAL_360_30_USD = "loanProductCreateResponseLP2AdvancedPaymentHorizontal36030Usd";
 }

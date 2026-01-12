@@ -131,7 +131,8 @@ public class LoanTransactionProcessingServiceImpl implements LoanTransactionProc
 
     @Override
     public LoanScheduleDTO getRecalculatedSchedule(final ScheduleGeneratorDTO generatorDTO, Loan loan) {
-        if (!loan.isInterestBearingAndInterestRecalculationEnabled() || loan.isNpa() || loan.isChargedOff()) {
+        if (!loan.isInterestBearingAndInterestRecalculationEnabled() || loan.isNpa()
+                || (loan.isChargedOff() && loan.isCumulativeSchedule())) {
             return null;
         }
         final InterestMethod interestMethod = loan.getLoanRepaymentScheduleDetail().getInterestMethod();
@@ -153,7 +154,7 @@ public class LoanTransactionProcessingServiceImpl implements LoanTransactionProc
     public OutstandingAmountsDTO fetchPrepaymentDetail(final ScheduleGeneratorDTO scheduleGeneratorDTO, final LocalDate onDate, Loan loan) {
         OutstandingAmountsDTO outstandingAmounts;
 
-        if (loan.isInterestBearingAndInterestRecalculationEnabled() && !loan.isChargeOffOnDate(onDate)) {
+        if (loan.isInterestBearingAndInterestRecalculationEnabled() && !loan.isChargeOffOnDate(onDate) && !loan.isContractTermination()) {
             final MathContext mc = MoneyHelper.getMathContext();
 
             final InterestMethod interestMethod = loan.getLoanRepaymentScheduleDetail().getInterestMethod();

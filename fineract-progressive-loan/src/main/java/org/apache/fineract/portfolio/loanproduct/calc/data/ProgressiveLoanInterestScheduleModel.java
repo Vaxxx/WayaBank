@@ -40,7 +40,6 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Setter;
@@ -49,8 +48,6 @@ import org.apache.fineract.infrastructure.core.serialization.gson.JsonExclude;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.MathUtil;
 import org.apache.fineract.organisation.monetary.domain.Money;
-import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTermVariationType;
 import org.apache.fineract.portfolio.loanproduct.domain.ILoanConfigurationDetails;
 
 @Data
@@ -62,7 +59,6 @@ public class ProgressiveLoanInterestScheduleModel {
     private final TreeSet<InterestRate> interestRates;
     @JsonExclude
     private final ILoanConfigurationDetails loanProductRelatedDetail;
-    private final Map<LoanTermVariationType, List<LoanTermVariationsData>> loanTermVariations;
     private final Integer installmentAmountInMultiplesOf;
     @JsonExclude
     private final MathContext mc;
@@ -74,12 +70,10 @@ public class ProgressiveLoanInterestScheduleModel {
     private LocalDate lastOverdueBalanceChange;
 
     public ProgressiveLoanInterestScheduleModel(final List<RepaymentPeriod> repaymentPeriods,
-            final ILoanConfigurationDetails loanProductRelatedDetail, final List<LoanTermVariationsData> loanTermVariations,
-            final Integer installmentAmountInMultiplesOf, final MathContext mc) {
+            final ILoanConfigurationDetails loanProductRelatedDetail, final Integer installmentAmountInMultiplesOf, final MathContext mc) {
         this.repaymentPeriods = new ArrayList<>(repaymentPeriods);
         this.interestRates = new TreeSet<>(Collections.reverseOrder());
         this.loanProductRelatedDetail = loanProductRelatedDetail;
-        this.loanTermVariations = buildLoanTermVariationMap(loanTermVariations);
         this.installmentAmountInMultiplesOf = installmentAmountInMultiplesOf;
         this.mc = mc;
         this.zero = Money.zero(loanProductRelatedDetail.getCurrencyData(), mc);
@@ -88,15 +82,13 @@ public class ProgressiveLoanInterestScheduleModel {
     }
 
     private ProgressiveLoanInterestScheduleModel(final List<RepaymentPeriod> repaymentPeriods, final TreeSet<InterestRate> interestRates,
-            final ILoanConfigurationDetails loanProductRelatedDetail,
-            final Map<LoanTermVariationType, List<LoanTermVariationsData>> loanTermVariations, final Integer installmentAmountInMultiplesOf,
-            final MathContext mc, final boolean isCopiedForCalculation) {
+            final ILoanConfigurationDetails loanProductRelatedDetail, final Integer installmentAmountInMultiplesOf, final MathContext mc,
+            final boolean isCopiedForCalculation) {
         this.mc = mc;
         this.repaymentPeriods = copyRepaymentPeriods(repaymentPeriods,
                 (previousPeriod, repaymentPeriod) -> RepaymentPeriod.copy(previousPeriod, repaymentPeriod, mc));
         this.interestRates = new TreeSet<>(interestRates);
         this.loanProductRelatedDetail = loanProductRelatedDetail;
-        this.loanTermVariations = loanTermVariations;
         this.installmentAmountInMultiplesOf = installmentAmountInMultiplesOf;
         this.zero = Money.zero(loanProductRelatedDetail.getCurrencyData(), mc);
         modifiers = new HashMap<>(Map.of(EMI_RECALCULATION, true, COPY, isCopiedForCalculation, INTEREST_RECALCULATION_ENABLED,
@@ -104,14 +96,14 @@ public class ProgressiveLoanInterestScheduleModel {
     }
 
     public ProgressiveLoanInterestScheduleModel deepCopy(MathContext mc) {
-        return new ProgressiveLoanInterestScheduleModel(repaymentPeriods, interestRates, loanProductRelatedDetail, loanTermVariations,
+        return new ProgressiveLoanInterestScheduleModel(repaymentPeriods, interestRates, loanProductRelatedDetail,
                 installmentAmountInMultiplesOf, mc, false);
     }
 
     public ProgressiveLoanInterestScheduleModel copyWithoutPaidAmounts() {
         final List<RepaymentPeriod> repaymentPeriodCopies = copyRepaymentPeriods(repaymentPeriods,
                 (previousPeriod, repaymentPeriod) -> RepaymentPeriod.copyWithoutPaidAmounts(previousPeriod, repaymentPeriod, mc));
-        return new ProgressiveLoanInterestScheduleModel(repaymentPeriodCopies, interestRates, loanProductRelatedDetail, loanTermVariations,
+        return new ProgressiveLoanInterestScheduleModel(repaymentPeriodCopies, interestRates, loanProductRelatedDetail,
                 installmentAmountInMultiplesOf, mc, true);
     }
 
@@ -416,15 +408,6 @@ public class ProgressiveLoanInterestScheduleModel {
                 : date.isAfter(previousInterestPeriod.getDueDate()) ? previousInterestPeriod.getDueDate() : date;
     }
 
-    private Map<LoanTermVariationType, List<LoanTermVariationsData>> buildLoanTermVariationMap(
-            final List<LoanTermVariationsData> loanTermVariationsData) {
-        if (loanTermVariationsData == null) {
-            return new HashMap<>();
-        }
-        return loanTermVariationsData.stream()
-                .collect(Collectors.groupingBy(ltvd -> LoanTermVariationType.fromInt(ltvd.getTermType().getId().intValue())));
-    }
-
     public void disableEMIRecalculation() {
         this.modifiers.put(EMI_RECALCULATION, false);
     }
@@ -437,7 +420,7 @@ public class ProgressiveLoanInterestScheduleModel {
         return this.modifiers.get(COPY);
     }
 
-    public Function<Long, LocalDate> resolveRepaymentPEriodLengthGeneratorFunction(LocalDate instance) {
+    public Function<Long, LocalDate> resolveRepaymentPeriodLengthGeneratorFunction(final LocalDate instance) {
         return switch (loanProductRelatedDetail.getRepaymentPeriodFrequencyType()) {
             case MONTHS -> instance::plusMonths;
             case WEEKS -> instance::plusWeeks;
@@ -446,7 +429,4 @@ public class ProgressiveLoanInterestScheduleModel {
         };
     }
 
-    public boolean isInterestRecalculationIsAllowed() {
-        return modifiers.get(INTEREST_RECALCULATION_ENABLED);
-    }
 }
